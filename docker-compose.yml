@@ -1,0 +1,24 @@
+version: "3.9"
+services:
+  backend:
+    build: ./backend
+    container_name: portfolio-backend
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - ALLOWED_ORIGINS=http://localhost:5173,http://localhost:4173,http://localhost:8080
+      - GITHUB_USERNAME=${GITHUB_USERNAME}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITHUB_REPOS_LIMIT=${GITHUB_REPOS_LIMIT:-6}
+      - GITHUB_WORKFLOW_FILENAME=${GITHUB_WORKFLOW_FILENAME:-ci.yml}
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: portfolio-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend

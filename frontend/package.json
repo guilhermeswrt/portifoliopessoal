@@ -1,0 +1,12 @@
+{
+  "name": "portfolio-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Frontend estático para o portifólio pessoal",
+  "scripts": {
+    "dev": "serve -l 5173 ."
+  },
+  "devDependencies": {
+    "serve": "^14.2.1"
+  }
+}

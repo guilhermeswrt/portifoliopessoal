@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portfólio Pessoal</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="hero">
+    <div class="hero__content">
+      <p class="eyebrow">Portfólio</p>
+      <h1 id="name">Seu Nome</h1>
+      <p id="title" class="subtitle">Título profissional</p>
+      <p id="summary" class="summary">Resumo profissional carregando...</p>
+      <div class="cta">
+        <a id="github" class="button" target="_blank" rel="noreferrer">GitHub</a>
+        <a id="linkedin" class="button secondary" target="_blank" rel="noreferrer">LinkedIn</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section>
+      <h2>Sobre</h2>
+      <div class="card" id="about"></div>
+    </section>
+
+    <section>
+      <h2>Habilidades</h2>
+      <div class="chips" id="skills"></div>
+    </section>
+
+    <section class="ci-section">
+      <div class="section-header">
+        <h2>Projetos</h2>
+        <span class="hint">Rodar testes por branch (GitHub)</span>
+      </div>
+      <div class="card ci-card">
+        <div class="ci-top">
+          <div>
+            <div class="ci-title">Testes automatizados</div>
+            <p class="ci-sub">Execute testes por projeto do GitHub</p>
+          </div>
+          <div class="ci-status">
+            <span id="status-dot" class="status-dot idle"></span>
+            <span id="status-text">Nenhum teste executado.</span>
+          </div>
+        </div>
+        <ul id="ci-projects" class="ci-list"></ul>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <p>Backend seguro e sem login. API em Docker.</p>
+  </footer>
+
+  <div id="modal" class="modal hidden">
+    <div class="modal__content">
+      <h3 id="modal-title">Testes a executar</h3>
+      <p id="modal-desc" class="modal__desc"></p>
+      <ul id="modal-tests" class="modal__list"></ul>
+      <div class="modal__actions">
+        <button id="modal-cancel" class="button secondary small">Cancelar</button>
+        <button id="modal-confirm" class="button small">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

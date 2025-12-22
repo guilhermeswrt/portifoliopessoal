@@ -1,0 +1,30 @@
+{
+  "name": "portifoliopessoal",
+  "version": "1.0.0",
+  "description": "Projeto para divulgar currículo e projetos de forma segura, sem login, com backend em Docker.",
+  "homepage": "https://github.com/guilhermeswrt/portifoliopessoal#readme",
+  "bugs": {
+    "url": "https://github.com/guilhermeswrt/portifoliopessoal/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/guilhermeswrt/portifoliopessoal.git"
+  },
+  "license": "ISC",
+  "author": "Siewert, Guilherme",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "test",
+    "prestart": "node scripts/github-auth.js",
+    "predev:start": "node scripts/github-auth.js",
+    "dev:backend": "cd backend && npm install && npm run dev",
+    "dev:frontend": "cd frontend && npm install && npm run dev",
+    "dev:start": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "start": "docker compose up --build",
+    "prod:frontend": "cd frontend && npm install && npm run dev",
+    "prod:backend": "cd backend && npm install && npm start"
+  },  "dependencies": {
+    "concurrently": "^8.2.2"    
+  }
+}
