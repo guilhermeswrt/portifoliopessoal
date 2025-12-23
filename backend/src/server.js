@@ -6,7 +6,10 @@ import express from "express";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 
-const dataModule = process.env.NODE_ENV === "test" ? "../test/data.js" : "./data.js";
+const E2E_MODE = process.env.E2E_MODE === "1";
+const useTestData = process.env.NODE_ENV === "test" || process.env.PORTFOLIO_DATA === "test";
+
+const dataModule = useTestData ? "../test/data.js" : "./data.js";
 const { profile, projects } = await import(dataModule);
 
 function loadEnv() {
@@ -85,6 +88,10 @@ async function fetchGitHubProjects() {
     return [];
   }
 
+  if (E2E_MODE) {
+    return [];
+  }
+
   if (!GITHUB_USERNAME) {
     throw new Error("GITHUB_USERNAME nao configurado");
   }
@@ -147,6 +154,32 @@ function simulateTestRun(branch, projectId, projectName) {
     projectId,
     projectName
   };
+}
+
+function simulateE2EQueuedRun(branch, projectId, projectName, provider) {
+  const run = {
+    id: `run-${Date.now()}`,
+    branch,
+    status: "queued",
+    passed: 0,
+    failed: 0,
+    total: 0,
+    finishedAt: new Date().toISOString(),
+    projectId,
+    projectName,
+    provider
+  };
+
+  // Após alguns segundos, marca como sucesso.
+  setTimeout(() => {
+    run.status = "passed";
+    run.passed = 25;
+    run.failed = 0;
+    run.total = 25;
+    run.finishedAt = new Date().toISOString();
+  }, 6_000);
+
+  return run;
 }
 
 async function triggerGitHubWorkflow({ targetRepoFullName, targetBranch }) {
@@ -356,21 +389,26 @@ app.post("/api/test-runs/run", async (req, res) => {
       if (!targetProject.repoFullName) {
         throw new Error("Projeto GitHub sem repoFullName");
       }
-      await triggerGitHubWorkflow({ targetRepoFullName: targetProject.repoFullName, targetBranch: branch });
       projectName = targetProject.name;
 
-      const run = {
-        id: `run-${Date.now()}`,
-        branch,
-        status: "queued",
-        passed: 0,
-        failed: 0,
-        total: 0,
-        finishedAt: new Date().toISOString(),
-        projectId,
-        projectName,
-        provider: "github-actions"
-      };
+      const run = E2E_MODE
+        ? simulateE2EQueuedRun(branch, projectId, projectName, "github-actions")
+        : {
+            id: `run-${Date.now()}`,
+            branch,
+            status: "queued",
+            passed: 0,
+            failed: 0,
+            total: 0,
+            finishedAt: new Date().toISOString(),
+            projectId,
+            projectName,
+            provider: "github-actions"
+          };
+
+      if (!E2E_MODE) {
+        await triggerGitHubWorkflow({ targetRepoFullName: targetProject.repoFullName, targetBranch: branch });
+      }
 
       testRuns.unshift(run);
       if (testRuns.length > MAX_TEST_RUNS) {
@@ -381,7 +419,9 @@ app.post("/api/test-runs/run", async (req, res) => {
     }
 
     projectName = targetProject?.name || "Global";
-    const run = simulateTestRun(branch, projectId, projectName);
+    const run = E2E_MODE
+      ? simulateE2EQueuedRun(branch, projectId, projectName, "simulated")
+      : simulateTestRun(branch, projectId, projectName);
     testRuns.unshift(run);
     if (testRuns.length > MAX_TEST_RUNS) {
       testRuns.length = MAX_TEST_RUNS;

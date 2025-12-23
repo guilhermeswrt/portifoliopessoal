@@ -19,6 +19,8 @@
     "test:backend": "npm --prefix backend test",
     "test:frontend": "npm --prefix frontend test",
     "test:all": "npm run test:backend && npm run test:frontend",
+    "test:e2e": "playwright test",
+    "e2e:servers": "concurrently -k -s first \"cross-env PORTFOLIO_DATA=test E2E_MODE=1 PORT=3001 node backend/src/server.js\" \"npm --prefix frontend dev\"",
     "prestart": "node scripts/github-auth.js",
     "predev:start": "node scripts/github-auth.js",
     "dev:backend": "cd backend && npm install && npm run dev",
@@ -30,5 +32,9 @@
   },
   "dependencies": {
     "concurrently": "^8.2.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.50.1",
+    "cross-env": "^7.0.3"
   }
 }

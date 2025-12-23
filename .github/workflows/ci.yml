@@ -76,6 +76,16 @@ jobs:
           CI: true
         run: npm --prefix frontend test
 
+      - name: Install Playwright browsers
+        if: ${{ env.TARGET_REPO == github.repository }}
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E UI tests (Playwright)
+        if: ${{ env.TARGET_REPO == github.repository }}
+        env:
+          CI: true
+        run: npm run test:e2e
+
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v4
