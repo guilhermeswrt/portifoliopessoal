@@ -1,4 +1,7 @@
-import "./app.js";
+import "../app.js";
+
+import { profileFixture } from "./fixtures/profile.js";
+import { projectsFixture, testRunsFixture } from "./fixtures/testRuns.js";
 
 const getExports = () => {
   const exportsObj = globalThis.__APP_TEST_EXPORTS__;
@@ -51,14 +54,7 @@ describe("frontend/app.js", () => {
   it("renderProfile preenche nome/título/links e skills", () => {
     const { renderProfile } = getExports();
 
-    renderProfile({
-      name: "Fulano",
-      title: "QA",
-      summary: "Resumo",
-      location: "Joinville",
-      contacts: { github: "https://github.com/x", linkedin: "https://linkedin.com/in/x" },
-      skills: ["JS", "Node"]
-    });
+    renderProfile(profileFixture);
 
     expect(document.querySelector("#name").textContent).toBe("Fulano");
     expect(document.querySelector("#title").textContent).toBe("QA");
@@ -86,25 +82,7 @@ describe("frontend/app.js", () => {
   it("renderCiProjects lista projeto GitHub e badge de status", () => {
     const { renderCiProjects } = getExports();
 
-    const projects = [
-      { id: "gh-1", name: "Repo1", repoUrl: "https://github.com/a/b", source: "github" }
-    ];
-
-    const testRuns = [
-      {
-        id: "run-1",
-        branch: "master",
-        status: "failed",
-        finishedAt: new Date().toISOString(),
-        passed: 10,
-        failed: 1,
-        total: 11,
-        projectId: "gh-1",
-        projectName: "Repo1"
-      }
-    ];
-
-    renderCiProjects(projects, testRuns);
+    renderCiProjects(projectsFixture, testRunsFixture);
 
     expect(document.querySelectorAll("#ci-projects li").length).toBe(1);
     const badge = document.querySelector(".ci-badge");

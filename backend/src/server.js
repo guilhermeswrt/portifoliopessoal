@@ -6,7 +6,8 @@ import express from "express";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 
-import { profile, projects } from "./data.js";
+const dataModule = process.env.NODE_ENV === "test" ? "../test/data.js" : "./data.js";
+const { profile, projects } = await import(dataModule);
 
 function loadEnv() {
   const candidates = [

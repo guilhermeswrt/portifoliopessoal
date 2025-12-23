@@ -1,15 +1,14 @@
 import request from "supertest";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { app, serverInstance } from "./server.js";
+import { app, serverInstance } from "../src/server.js";
 
 let server;
 
 beforeAll(() => {
-  // Ensure server is listening for tests
   server = serverInstance || app.listen(0);
 });
 
-afterAll((done) => {
+afterAll(() => {
   if (!server) return;
   return new Promise((resolve) => {
     server.close(() => resolve());

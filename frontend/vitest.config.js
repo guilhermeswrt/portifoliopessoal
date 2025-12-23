@@ -6,7 +6,7 @@ export default defineConfig({
     globals: true,
     reporters: process.env.CI ? ["default", "junit"] : ["default"],
     outputFile: process.env.CI ? "./test-results/junit.xml" : undefined,
-    include: ["**/*.test.js"],
+    include: ["test/**/*.test.js"],
     restoreMocks: true,
     clearMocks: true
   }
