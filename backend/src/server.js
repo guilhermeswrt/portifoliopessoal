@@ -77,6 +77,10 @@ const limiter = rateLimit({
 app.use(limiter);
 
 async function fetchGitHubProjects() {
+  if (process.env.NODE_ENV === "test") {
+    return [];
+  }
+
   if (!GITHUB_USERNAME) {
     throw new Error("GITHUB_USERNAME nao configurado");
   }
@@ -286,6 +290,11 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: "Erro interno" });
 });
 
-app.listen(PORT, () => {
-  console.log(`API rodando na porta ${PORT}`);
-});
+let serverInstance;
+if (process.env.NODE_ENV !== "test") {
+  serverInstance = app.listen(PORT, () => {
+    console.log(`API rodando na porta ${PORT}`);
+  });
+}
+
+export { app, serverInstance };

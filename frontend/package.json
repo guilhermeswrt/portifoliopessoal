@@ -3,10 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "description": "Frontend estático para o portifólio pessoal",
+  "type": "module",
   "scripts": {
-    "dev": "serve -l 5173 ."
+    "dev": "serve -l 5173 .",
+    "test": "cross-env NODE_ENV=test vitest run",
+    "test:watch": "cross-env NODE_ENV=test vitest"
   },
   "devDependencies": {
-    "serve": "^14.2.1"
+    "cross-env": "^7.0.3",
+    "jsdom": "^24.1.3",
+    "serve": "^14.2.1",
+    "vitest": "^1.6.0"
   }
 }

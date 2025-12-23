@@ -1,4 +1,5 @@
 # Portfólio Pessoal
+[![CI](https://github.com/guilhermeswrt/portifoliopessoal/actions/workflows/ci.yml/badge.svg)](https://github.com/guilhermeswrt/portifoliopessoal/actions/workflows/ci.yml)
 Projeto para divulgar currículo e projetos de forma segura, sem login, com backend em Docker.
 
 ## Objetivos
@@ -18,12 +19,19 @@ Projeto para divulgar currículo e projetos de forma segura, sem login, com back
 - `docker-compose.yml`: sobe backend e frontend em Docker.
 
 ## Integração com GitHub
+- Para setup rápido, copie `.env.example` para `.env` e preencha os valores.
 - Defina as variáveis no backend (ou no `docker-compose.yml`):
 	- `GITHUB_USERNAME`: seu usuário do GitHub (obrigatório).
 	- `GITHUB_TOKEN`: obrigatório para listar projetos e disparar workflows.
 	- `GITHUB_REPOS_LIMIT`: quantos repositórios recentes trazer (padrão 6).
 	- `GITHUB_WORKFLOW_FILENAME`: nome do workflow disparado (default `ci.yml`).
 - A configuração inicial (`npm start` ou `npm run dev:start`) abre o fluxo de autenticação, pede usuário e token uma única vez e salva em `.env`; os valores salvos são usados para listar projetos.
+
+## Testes (backend + frontend)
+- Rodar tudo pela raiz: `npm run test:all`
+- Rodar só backend: `cd backend && npm install && npm test` (Vitest + Supertest)
+- Rodar só frontend: `cd frontend && npm install && npm test` (Vitest + jsdom)
+- CI/CD: o workflow `.github/workflows/ci.yml` roda em push/PR e também pode ser executado manualmente (aba **Actions** no GitHub)
 - A rota `/api/projects` mescla os projetos estáticos de `data.js` com os repositórios do GitHub mais recentes.
 - Cache em memória reduz chamadas à API do GitHub.
 

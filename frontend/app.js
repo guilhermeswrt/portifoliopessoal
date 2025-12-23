@@ -199,4 +199,12 @@ function openModal({ project, branchSelect, projects }) {
   modal.classList.remove("hidden");
 }
 
-loadData();
+if (typeof process !== "undefined" && process.env?.NODE_ENV === "test") {
+  globalThis.__APP_TEST_EXPORTS__ = {
+    renderProfile,
+    renderCiProjects,
+    openModal
+  };
+} else {
+  loadData();
+}

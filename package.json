@@ -15,7 +15,10 @@
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
-    "test": "test",
+    "test": "npm run test:all",
+    "test:backend": "npm --prefix backend test",
+    "test:frontend": "npm --prefix frontend test",
+    "test:all": "npm run test:backend && npm run test:frontend",
     "prestart": "node scripts/github-auth.js",
     "predev:start": "node scripts/github-auth.js",
     "dev:backend": "cd backend && npm install && npm run dev",
@@ -24,7 +27,8 @@
     "start": "docker compose up --build",
     "prod:frontend": "cd frontend && npm install && npm run dev",
     "prod:backend": "cd backend && npm install && npm start"
-  },  "dependencies": {
-    "concurrently": "^8.2.2"    
+  },
+  "dependencies": {
+    "concurrently": "^8.2.2"
   }
 }
