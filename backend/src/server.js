@@ -34,6 +34,9 @@ const GITHUB_USERNAME = process.env.GITHUB_USERNAME || "";
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN || "";
 const GITHUB_REPOS_LIMIT = Number(process.env.GITHUB_REPOS_LIMIT || 6);
 const GITHUB_WORKFLOW_FILENAME = process.env.GITHUB_WORKFLOW_FILENAME || "ci.yml";
+const GITHUB_WORKFLOW_REPO =
+  process.env.GITHUB_WORKFLOW_REPO || (GITHUB_USERNAME ? `${GITHUB_USERNAME}/portifoliopessoal` : "");
+const GITHUB_WORKFLOW_REF = process.env.GITHUB_WORKFLOW_REF || "main";
 const GITHUB_CACHE_MS = 10 * 60 * 1000;
 const MAX_TEST_RUNS = 20;
 
@@ -145,12 +148,24 @@ function simulateTestRun(branch, projectId, projectName) {
   };
 }
 
-async function triggerGitHubWorkflow(repoFullName, branch) {
+async function triggerGitHubWorkflow({ targetRepoFullName, targetBranch }) {
   if (!GITHUB_TOKEN) {
     throw new Error("GITHUB_TOKEN nao configurado para rodar workflows reais");
   }
 
-  const url = `https://api.github.com/repos/${repoFullName}/actions/workflows/${GITHUB_WORKFLOW_FILENAME}/dispatches`;
+  if (!GITHUB_WORKFLOW_REPO) {
+    throw new Error("GITHUB_WORKFLOW_REPO nao configurado (repo onde está o workflow central)");
+  }
+
+  if (!targetRepoFullName) {
+    throw new Error("targetRepoFullName é obrigatório");
+  }
+
+  if (!targetBranch) {
+    throw new Error("targetBranch é obrigatório");
+  }
+
+  const url = `https://api.github.com/repos/${GITHUB_WORKFLOW_REPO}/actions/workflows/${GITHUB_WORKFLOW_FILENAME}/dispatches`;
   const headers = {
     "User-Agent": "portfolio-backend",
     Accept: "application/vnd.github+json",
@@ -158,7 +173,15 @@ async function triggerGitHubWorkflow(repoFullName, branch) {
     "X-GitHub-Api-Version": "2022-11-28"
   };
 
-  const body = { ref: branch };
+  // ref aqui é do repositório do workflow central (este portfólio),
+  // e o repo/branch alvo vai via inputs.
+  const body = {
+    ref: GITHUB_WORKFLOW_REF,
+    inputs: {
+      target_repo: targetRepoFullName,
+      target_ref: targetBranch
+    }
+  };
 
   const response = await fetch(url, {
     method: "POST",
@@ -167,7 +190,14 @@ async function triggerGitHubWorkflow(repoFullName, branch) {
   });
 
   if (!response.ok) {
-    throw new Error(`Falha ao disparar workflow GitHub: status ${response.status}`);
+    let details = "";
+    try {
+      const text = await response.text();
+      details = text ? ` | body: ${text}` : "";
+    } catch {
+      // ignore
+    }
+    throw new Error(`Falha ao disparar workflow GitHub: status ${response.status}${details}`);
   }
 }
 
@@ -243,7 +273,7 @@ app.post("/api/test-runs/run", async (req, res) => {
       if (!targetProject.repoFullName) {
         throw new Error("Projeto GitHub sem repoFullName");
       }
-      await triggerGitHubWorkflow(targetProject.repoFullName, branch);
+      await triggerGitHubWorkflow({ targetRepoFullName: targetProject.repoFullName, targetBranch: branch });
       projectName = targetProject.name;
 
       const run = {

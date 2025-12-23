@@ -5,44 +5,70 @@ on:
     branches: ["main", "master", "develop"]
   pull_request:
   workflow_dispatch:
+    inputs:
+      target_repo:
+        description: "Repo alvo (ex: user/repo)"
+        required: false
+        type: string
+      target_ref:
+        description: "Branch/ref alvo (ex: main)"
+        required: false
+        type: string
 
 jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      TARGET_REPO: ${{ inputs.target_repo || github.repository }}
+      TARGET_REF: ${{ inputs.target_ref || github.ref_name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          repository: ${{ env.TARGET_REPO }}
+          ref: ${{ env.TARGET_REF }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            backend/package-lock.json
-            frontend/package-lock.json
+
+      - name: Install & test (repo alvo)
+        if: ${{ env.TARGET_REPO != github.repository }}
+        env:
+          NODE_ENV: test
+          CI: true
+        run: |
+          npm ci
+          npm run test --if-present
 
       - name: Install root deps
+        if: ${{ env.TARGET_REPO == github.repository }}
         run: npm ci
 
       - name: Install backend deps
+        if: ${{ env.TARGET_REPO == github.repository }}
         run: npm ci --prefix backend
 
       - name: Install frontend deps
+        if: ${{ env.TARGET_REPO == github.repository }}
         run: npm ci --prefix frontend
 
       - name: Prepare report directories
+        if: ${{ env.TARGET_REPO == github.repository }}
         run: mkdir -p backend/test-results frontend/test-results
 
       - name: Run backend tests
+        if: ${{ env.TARGET_REPO == github.repository }}
         env:
           NODE_ENV: test
           CI: true
         run: npm --prefix backend test
 
       - name: Run frontend tests
+        if: ${{ env.TARGET_REPO == github.repository }}
         env:
           NODE_ENV: test
           CI: true
