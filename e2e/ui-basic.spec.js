@@ -1,7 +1,26 @@
 const { test, expect } = require("@playwright/test");
 
 test("UI: selecionar master, Run + Confirmar, aguardar CI finalizar com sucesso", async ({ page }) => {
+  // Garante que o backend está pronto (evita falha de carregamento inicial da UI).
+  await expect
+    .poll(
+      async () => {
+        const res = await page.request.get("http://127.0.0.1:3001/api/health");
+        return res.ok();
+      },
+      { timeout: 30_000 }
+    )
+    .toBe(true);
+
   await page.goto("/");
+
+  // Se a UI falhou ao carregar a API, falha com um erro explícito.
+  const summary = page.locator("#summary");
+  await expect(summary).toBeVisible();
+  const summaryText = ((await summary.textContent()) || "").toLowerCase();
+  if (summaryText.includes("não foi possível carregar a api")) {
+    throw new Error("A UI não conseguiu carregar a API do backend (verifique se http://127.0.0.1:3001 está acessível).");
+  }
 
   // Aguarda a lista de projetos carregar (no modo E2E temos 1 projeto fake do GitHub)
   const projectItem = page.locator("#ci-projects .ci-item").first();
