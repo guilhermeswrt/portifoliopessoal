@@ -21,6 +21,27 @@
   </header>
 
   <main class="container">
+    <section id="screen-project" class="hidden">
+      <div class="section-header">
+        <h2 id="project-title">Projeto selecionado</h2>
+        <button id="project-back" class="button secondary small" type="button">Voltar</button>
+      </div>
+      <div class="card ci-card">
+        <div class="ci-top">
+          <div>
+            <div class="ci-title">Histórico do GitHub Actions</div>
+            <p id="project-repo" class="ci-sub"></p>
+          </div>
+          <div class="ci-status">
+            <span id="actions-dot" class="status-dot idle"></span>
+            <span id="actions-text">Carregando...</span>
+          </div>
+        </div>
+        <ul id="actions-runs" class="ci-list"></ul>
+      </div>
+    </section>
+
+    <div id="screen-home">
     <section>
       <h2>Sobre</h2>
       <div class="card" id="about"></div>
@@ -50,6 +71,8 @@
         <ul id="ci-projects" class="ci-list"></ul>
       </div>
     </section>
+
+    </div>
 
   </main>
 

@@ -26,7 +26,7 @@ Projeto para divulgar currículo e projetos de forma segura, sem login, com back
 	- `GITHUB_REPOS_LIMIT`: quantos repositórios recentes trazer (padrão 6).
 	- `GITHUB_WORKFLOW_FILENAME`: nome do workflow disparado (default `ci.yml`).
 	- `GITHUB_WORKFLOW_REPO`: repo onde o workflow central roda (ex: `guilhermeswrt/portifoliopessoal`).
-	- `GITHUB_WORKFLOW_REF`: branch do repo do workflow central (default `main`).
+	- `GITHUB_WORKFLOW_REF`: branch do repo do workflow central (default `master`).
 - A configuração inicial (`npm start` ou `npm run dev:start`) abre o fluxo de autenticação, pede usuário e token uma única vez e salva em `.env`; os valores salvos são usados para listar projetos.
 
 ## Testes (backend + frontend)

@@ -10,6 +10,16 @@ const getExports = () => {
 
 const baseDom = () => {
   document.body.innerHTML = `
+    <section id="screen-project" class="hidden">
+      <h2 id="project-title"></h2>
+      <button id="project-back"></button>
+      <p id="project-repo"></p>
+      <span id="actions-dot"></span>
+      <span id="actions-text"></span>
+      <ul id="actions-runs"></ul>
+    </section>
+
+    <div id="screen-home">
     <h1 id="name"></h1>
     <p id="title"></p>
     <p id="summary"></p>
@@ -28,6 +38,8 @@ const baseDom = () => {
     <ul id="modal-tests"></ul>
     <button id="modal-confirm"></button>
     <button id="modal-cancel"></button>
+
+    </div>
   `;
 };
 
@@ -81,7 +93,7 @@ describe("frontend/app.js", () => {
     const testRuns = [
       {
         id: "run-1",
-        branch: "main",
+        branch: "master",
         status: "failed",
         finishedAt: new Date().toISOString(),
         passed: 10,

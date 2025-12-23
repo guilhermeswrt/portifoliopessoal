@@ -36,7 +36,7 @@ const GITHUB_REPOS_LIMIT = Number(process.env.GITHUB_REPOS_LIMIT || 6);
 const GITHUB_WORKFLOW_FILENAME = process.env.GITHUB_WORKFLOW_FILENAME || "ci.yml";
 const GITHUB_WORKFLOW_REPO =
   process.env.GITHUB_WORKFLOW_REPO || (GITHUB_USERNAME ? `${GITHUB_USERNAME}/portifoliopessoal` : "");
-const GITHUB_WORKFLOW_REF = process.env.GITHUB_WORKFLOW_REF || "main";
+const GITHUB_WORKFLOW_REF = process.env.GITHUB_WORKFLOW_REF || "master";
 const GITHUB_CACHE_MS = 10 * 60 * 1000;
 const MAX_TEST_RUNS = 20;
 
@@ -201,6 +201,73 @@ async function triggerGitHubWorkflow({ targetRepoFullName, targetBranch }) {
   }
 }
 
+async function fetchWorkflowRunsForTarget(targetRepoFullName) {
+  if (process.env.NODE_ENV === "test") {
+    return [];
+  }
+
+  if (!GITHUB_TOKEN) {
+    throw new Error("GITHUB_TOKEN nao configurado para consultar Actions");
+  }
+
+  if (!GITHUB_WORKFLOW_REPO) {
+    throw new Error("GITHUB_WORKFLOW_REPO nao configurado (repo onde está o workflow central)");
+  }
+
+  if (!GITHUB_WORKFLOW_FILENAME) {
+    throw new Error("GITHUB_WORKFLOW_FILENAME nao configurado");
+  }
+
+  if (!targetRepoFullName) {
+    throw new Error("targetRepoFullName é obrigatório");
+  }
+
+  const url = `https://api.github.com/repos/${GITHUB_WORKFLOW_REPO}/actions/workflows/${GITHUB_WORKFLOW_FILENAME}/runs?per_page=50`;
+  const headers = {
+    "User-Agent": "portfolio-backend",
+    Accept: "application/vnd.github+json",
+    Authorization: `Bearer ${GITHUB_TOKEN}`,
+    "X-GitHub-Api-Version": "2022-11-28"
+  };
+
+  const response = await fetch(url, { headers });
+  if (!response.ok) {
+    throw new Error(`GitHub Actions API status ${response.status}`);
+  }
+
+  const data = await response.json();
+  const runs = Array.isArray(data?.workflow_runs) ? data.workflow_runs : [];
+
+  const normalize = (value) => String(value || "").toLowerCase();
+  const target = normalize(targetRepoFullName);
+
+  const mapRun = (run) => ({
+    id: run.id,
+    runNumber: run.run_number,
+    status: run.status,
+    conclusion: run.conclusion,
+    createdAt: run.created_at,
+    finishedAt: run.updated_at,
+    title: run.display_title || run.name,
+    url: run.html_url
+  });
+
+  const filtered = runs.filter((run) => {
+    const haystack = normalize(
+      [
+        run.display_title,
+        run.name,
+        run.head_commit?.message,
+        run.head_branch,
+        run.event
+      ].join(" ")
+    );
+    return haystack.includes(target);
+  });
+
+  return filtered.map(mapRun);
+}
+
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", uptime: process.uptime() });
 });
@@ -248,6 +315,21 @@ app.get("/api/test-runs/latest", (req, res) => {
     return res.json({ message: "Nenhum teste executado" });
   }
   return res.json(testRuns[0]);
+});
+
+app.get("/api/actions/runs", async (req, res) => {
+  const repoFullName = typeof req.query?.repoFullName === "string" ? req.query.repoFullName.trim() : "";
+  if (!repoFullName) {
+    return res.status(400).json({ error: "repoFullName é obrigatório" });
+  }
+
+  try {
+    const runs = await fetchWorkflowRunsForTarget(repoFullName);
+    return res.json(runs);
+  } catch (error) {
+    console.error("Falha ao buscar histórico do Actions", error);
+    return res.status(500).json({ error: "Falha ao buscar histórico do Actions" });
+  }
 });
 
 app.post("/api/test-runs/run", async (req, res) => {
@@ -324,6 +406,17 @@ let serverInstance;
 if (process.env.NODE_ENV !== "test") {
   serverInstance = app.listen(PORT, () => {
     console.log(`API rodando na porta ${PORT}`);
+  });
+
+  serverInstance.on("error", (err) => {
+    if (err?.code === "EADDRINUSE") {
+      console.error(`Porta ${PORT} já está em uso. Finalize o processo anterior ou defina PORT em .env.`);
+      process.exitCode = 1;
+      return;
+    }
+
+    console.error("Erro ao iniciar servidor", err);
+    process.exitCode = 1;
   });
 }
 

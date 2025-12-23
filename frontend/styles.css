@@ -253,6 +253,20 @@ h2 {
   color: var(--muted);
 }
 
+.project-link {
+  background: transparent;
+  border: none;
+  padding: 0;
+  text-align: left;
+  font: inherit;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.project-link:hover {
+  text-decoration: underline;
+}
+
 .ci-badge {
   padding: 6px 10px;
   border-radius: 10px;

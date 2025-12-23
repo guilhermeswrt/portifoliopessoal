@@ -3,7 +3,8 @@ const API_BASE = window.API_BASE_URL || "http://localhost:3001/api";
 const $ = (selector) => document.querySelector(selector);
 
 const ciState = {
-  loading: false
+  loading: false,
+  projects: []
 };
 
 const testCatalog = ["Lint", "Unit Tests", "Integration Tests", "E2E Smoke"];
@@ -45,8 +46,23 @@ async function loadData() {
     const projects = await projectsRes.json();
     const testRuns = await testRunsRes.json();
 
+    ciState.projects = projects;
+
     renderProfile(profile);
     renderCiProjects(projects, testRuns);
+
+    const back = $("#project-back");
+    if (back) {
+      back.onclick = () => {
+        location.hash = "";
+      };
+    }
+
+    window.addEventListener("hashchange", () => {
+      renderProjectScreen();
+    });
+
+    renderProjectScreen();
   } catch (error) {
     console.error(error);
     $("#summary").textContent = "Não foi possível carregar a API. Verifique se o backend está rodando.";
@@ -83,10 +99,20 @@ function renderCiProjects(projects, testRuns) {
 
     const meta = document.createElement("div");
     meta.className = "meta";
-    meta.innerHTML = `
-      <strong>${project.name}</strong>
-      <span>${project.repoUrl || ""}</span>
-    `;
+
+    const nameBtn = document.createElement("button");
+    nameBtn.type = "button";
+    nameBtn.className = "project-link";
+    nameBtn.textContent = project.name;
+    nameBtn.addEventListener("click", () => {
+      location.hash = `#project=${encodeURIComponent(project.id)}`;
+    });
+
+    const repoLine = document.createElement("span");
+    repoLine.textContent = project.repoUrl || "";
+
+    meta.appendChild(nameBtn);
+    meta.appendChild(repoLine);
 
     const projectRuns = (testRuns || []).filter((r) => r.projectId === project.id);
     const latestRun = projectRuns.length ? projectRuns[0] : null;
@@ -100,7 +126,7 @@ function renderCiProjects(projects, testRuns) {
 
     const select = document.createElement("select");
     select.className = "branch-select";
-    ["main", "develop", "qa"].forEach((branch) => {
+    ["master"].forEach((branch) => {
       const opt = document.createElement("option");
       opt.value = branch;
       opt.textContent = branch;
@@ -122,6 +148,129 @@ function renderCiProjects(projects, testRuns) {
     li.appendChild(badge);
     list.appendChild(li);
   });
+}
+
+async function fetchActionsRuns(repoFullName) {
+  const res = await fetch(`${API_BASE}/actions/runs?repoFullName=${encodeURIComponent(repoFullName)}`);
+  if (!res.ok) {
+    throw new Error("Falha ao buscar histórico do Actions");
+  }
+  return res.json();
+}
+
+function showScreen(screen) {
+  const home = $("#screen-home");
+  const project = $("#screen-project");
+  if (!home || !project) return;
+
+  if (screen === "project") {
+    home.classList.add("hidden");
+    project.classList.remove("hidden");
+  } else {
+    project.classList.add("hidden");
+    home.classList.remove("hidden");
+  }
+}
+
+function getProjectIdFromHash() {
+  const hash = (location.hash || "").replace(/^#/, "");
+  if (!hash.startsWith("project=")) return null;
+  const value = hash.slice("project=".length);
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+async function renderProjectScreen() {
+  const projectId = getProjectIdFromHash();
+  if (!projectId) {
+    showScreen("home");
+    return;
+  }
+
+  const project = (ciState.projects || []).find((p) => p.id === projectId);
+  if (!project || project.source !== "github") {
+    showScreen("home");
+    return;
+  }
+
+  showScreen("project");
+
+  const title = $("#project-title");
+  const repo = $("#project-repo");
+  const dot = $("#actions-dot");
+  const text = $("#actions-text");
+  const list = $("#actions-runs");
+
+  title.textContent = `Projeto selecionado: ${project.name}`;
+  repo.textContent = project.repoFullName || project.repoUrl || "";
+  list.innerHTML = "";
+  dot.className = "status-dot idle";
+  text.textContent = "Carregando...";
+
+  try {
+    const runs = await fetchActionsRuns(project.repoFullName);
+    if (!Array.isArray(runs) || runs.length === 0) {
+      dot.className = "status-dot idle";
+      text.textContent = "Nenhuma execução encontrada.";
+      return;
+    }
+
+    const latest = runs[0];
+    const ok = latest.conclusion === "success";
+    dot.className = ok ? "status-dot success" : latest.conclusion ? "status-dot failed" : "status-dot idle";
+    text.textContent = `Total: ${runs.length}`;
+
+    runs.forEach((run) => {
+      const li = document.createElement("li");
+      li.className = "ci-item";
+
+      const meta = document.createElement("div");
+      meta.className = "meta";
+
+      const strong = document.createElement("strong");
+      strong.textContent = run.title || `Run #${run.runNumber || run.id}`;
+
+      const when = document.createElement("span");
+      const date = run.finishedAt
+        ? new Date(run.finishedAt)
+        : run.createdAt
+          ? new Date(run.createdAt)
+          : null;
+      when.textContent = date ? date.toLocaleString("pt-BR") : "";
+
+      meta.appendChild(strong);
+      meta.appendChild(when);
+
+      const actions = document.createElement("div");
+      actions.className = "ci-actions-inline";
+
+      const link = document.createElement("a");
+      link.className = "button secondary small";
+      link.target = "_blank";
+      link.rel = "noreferrer";
+      link.href = run.url || "#";
+      link.textContent = "Abrir";
+      actions.appendChild(link);
+
+      const badge = document.createElement("span");
+      const status = (run.conclusion || run.status || "").toLowerCase();
+      const failed = status && status !== "success" && status !== "passed";
+      badge.className = `ci-badge ${failed ? "failed" : "success"}`;
+      badge.textContent = status ? status : "unknown";
+
+      li.appendChild(meta);
+      li.appendChild(actions);
+      li.appendChild(badge);
+      list.appendChild(li);
+    });
+  } catch (error) {
+    console.error(error);
+    dot.className = "status-dot failed";
+    text.textContent = "Falha ao buscar histórico.";
+  }
 }
 
 async function loadTestRunsOnly(projects) {
@@ -203,7 +352,8 @@ if (typeof process !== "undefined" && process.env?.NODE_ENV === "test") {
   globalThis.__APP_TEST_EXPORTS__ = {
     renderProfile,
     renderCiProjects,
-    openModal
+    openModal,
+    renderProjectScreen
   };
 } else {
   loadData();

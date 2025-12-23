@@ -51,17 +51,29 @@ describe("API", () => {
   it("POST /api/test-runs/run cria um run simulado", async () => {
     const res = await request(server)
       .post("/api/test-runs/run")
-      .send({ branch: "main", projectId: "" });
+      .send({ branch: "master", projectId: "" });
 
     expect(res.status).toBe(201);
     expect(res.body).toHaveProperty("id");
-    expect(res.body).toHaveProperty("branch", "main");
+    expect(res.body).toHaveProperty("branch", "master");
     expect(["passed", "failed", "queued"]).toContain(res.body.status);
     expect(res.body).toHaveProperty("finishedAt");
   });
 
   it("/api/test-runs retorna array com runs", async () => {
     const res = await request(server).get("/api/test-runs");
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+  });
+
+  it("/api/actions/runs valida repoFullName", async () => {
+    const res = await request(server).get("/api/actions/runs");
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ error: "repoFullName é obrigatório" });
+  });
+
+  it("/api/actions/runs retorna array (vazio em test)", async () => {
+    const res = await request(server).get("/api/actions/runs").query({ repoFullName: "user/repo" });
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
   });

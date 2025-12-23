@@ -1,8 +1,9 @@
 name: CI
+run-name: CI • ${{ inputs.target_repo || github.repository }}@${{ inputs.target_ref || github.ref_name }}
 
 on:
   push:
-    branches: ["main", "master", "develop"]
+    branches: ["master"]
   pull_request:
   workflow_dispatch:
     inputs:
@@ -11,7 +12,7 @@ on:
         required: false
         type: string
       target_ref:
-        description: "Branch/ref alvo (ex: main)"
+        description: "Branch/ref alvo (ex: master)"
         required: false
         type: string
 
@@ -28,6 +29,7 @@ jobs:
         with:
           repository: ${{ env.TARGET_REPO }}
           ref: ${{ env.TARGET_REF }}
+          fetch-depth: 1
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
